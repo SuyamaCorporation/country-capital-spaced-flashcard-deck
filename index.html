@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Country Capital Flashcards</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+.perspective{perspective:1200px}
+.card-inner{transform-style:preserve-3d;transition:transform .55s cubic-bezier(.4,0,.2,1)}
+.card-inner.flipped{transform:rotateY(180deg)}
+.card-face{backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.card-back{transform:rotateY(180deg)}
+.rating-btn{transition:transform .1s,box-shadow .1s}
+.rating-btn:active{transform:scale(.95)}
+@keyframes slideIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.slide-in{animation:slideIn .3s ease forwards}
+</style>
+</head>
+<body class="bg-gradient-to-br from-emerald-50 to-teal-100 min-h-screen font-sans">
+<div class="max-w-2xl mx-auto px-4 py-8">
+  <div class="text-center mb-6">
+    <h1 class="text-3xl font-bold text-teal-800 mb-1">Capital Cities</h1>
+    <p class="text-teal-500 text-sm">Spaced repetition — rate yourself to schedule reviews</p>
+  </div>
+
+  <div class="flex justify-between items-center mb-3 px-1">
+    <div class="text-sm font-semibold text-teal-700" id="deckStatus">Due: 0 | Total: 60</div>
+    <div class="flex gap-2 text-xs text-teal-600">
+      <span id="contLabel">🌍</span>
+      <button onclick="toggleFilter()" class="underline" id="filterBtn">All regions</button>
+    </div>
+  </div>
+
+  <div class="w-full bg-teal-100 rounded-full h-2 mb-5">
+    <div id="progressBar" class="bg-teal-500 h-2 rounded-full transition-all duration-500" style="width:0%"></div>
+  </div>
+
+  <div id="studyArea">
+    <div class="perspective w-full mb-5" style="height:200px">
+      <div class="card-inner w-full h-full relative cursor-pointer select-none" id="cardInner" onclick="flipCard()" role="button" tabindex="0" aria-label="Flip card" onkeydown="if(event.key==='Enter'||event.key===' ')flipCard()">
+        <div class="card-face absolute inset-0 bg-white rounded-2xl shadow-xl flex flex-col items-center justify-center p-6">
+          <div class="text-xs uppercase tracking-widest text-teal-400 mb-2" id="cardRegion">Europe</div>
+          <div class="text-4xl font-bold text-teal-700 mb-1" id="cardCountry">France</div>
+          <div class="text-sm text-gray-400 mt-3">What is the capital? Tap to reveal</div>
+        </div>
+        <div class="card-face card-back absolute inset-0 bg-teal-600 rounded-2xl shadow-xl flex flex-col items-center justify-center p-6 text-white">
+          <div class="text-xs uppercase tracking-widest text-teal-300 mb-2">CAPITAL</div>
+          <div class="text-4xl font-bold mb-2" id="cardCapital">Paris</div>
+          <div class="text-teal-200 text-sm" id="cardExtra"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="ratingArea" class="hidden slide-in">
+      <div class="text-center text-sm text-gray-500 mb-3">How well did you know it?</div>
+      <div class="flex justify-center gap-2 flex-wrap mb-2">
+        <button onclick="rate(1)" class="rating-btn px-4 py-3 bg-red-100 border-2 border-red-300 text-red-700 rounded-xl font-bold text-sm shadow">1<br><span class="font-normal text-xs">Blackout</span></button>
+        <button onclick="rate(2)" class="rating-btn px-4 py-3 bg-orange-100 border-2 border-orange-300 text-orange-700 rounded-xl font-bold text-sm shadow">2<br><span class="font-normal text-xs">Wrong</span></button>
+        <button onclick="rate(3)" class="rating-btn px-4 py-3 bg-yellow-100 border-2 border-yellow-300 text-yellow-700 rounded-xl font-bold text-sm shadow">3<br><span class="font-normal text-xs">Hard</span></button>
+        <button onclick="rate(4)" class="rating-btn px-4 py-3 bg-lime-100 border-2 border-lime-400 text-lime-700 rounded-xl font-bold text-sm shadow">4<br><span class="font-normal text-xs">Good</span></button>
+        <button onclick="rate(5)" class="rating-btn px-4 py-3 bg-green-100 border-2 border-green-400 text-green-700 rounded-xl font-bold text-sm shadow">5<br><span class="font-normal text-xs">Easy</span></button>
+      </div>
+      <div class="text-center text-xs text-gray-400 mt-1" id="nextReview"></div>
+    </div>
+
+    <div id="revealHint" class="text-center text-sm text-gray-400 mt-2">Tap the card to reveal the answer</div>
+  </div>
+
+  <div id="summaryArea" class="hidden text-center py-8">
+    <div class="text-5xl mb-4">🎉</div>
+    <div class="text-2xl font-bold text-teal-700 mb-2">Session complete!</div>
+    <div class="text-gray-500 mb-6" id="summaryText"></div>
+    <button onclick="startSession()" class="px-8 py-3 bg-teal-600 text-white rounded-xl font-bold shadow hover:bg-teal-700 transition">Study Again</button>
+  </div>
+
+  <div class="mt-6 grid grid-cols-3 gap-3 text-center">
+    <div class="bg-white/70 rounded-xl p-3"><div class="text-xl font-bold text-teal-600" id="statStudied">0</div><div class="text-xs text-gray-400">Studied</div></div>
+    <div class="bg-white/70 rounded-xl p-3"><div class="text-xl font-bold text-green-600" id="statMastered">0</div><div class="text-xs text-gray-400">Mastered</div></div>
+    <div class="bg-white/70 rounded-xl p-3"><div class="text-xl font-bold text-orange-500" id="statDue">0</div><div class="text-xs text-gray-400">Due Today</div></div>
+  </div>
+
+  <div class="text-center mt-4">
+    <button onclick="if(confirm('Reset all SR data?'))resetAll()" class="text-xs text-gray-400 hover:text-red-400 transition">Reset All Progress</button>
+  </div>
+</div>
+
+<script>
+const PAIRS=[
+  {country:"France",capital:"Paris",region:"Europe"},{country:"Germany",capital:"Berlin",region:"Europe"},{country:"Spain",capital:"Madrid",region:"Europe"},
+  {country:"Italy",capital:"Rome",region:"Europe"},{country:"United Kingdom",capital:"London",region:"Europe"},{country:"Portugal",capital:"Lisbon",region:"Europe"},
+  {country:"Netherlands",capital:"Amsterdam",region:"Europe"},{country:"Sweden",capital:"Stockholm",region:"Europe"},{country:"Norway",capital:"Oslo",region:"Europe"},
+  {country:"Poland",capital:"Warsaw",region:"Europe"},{country:"Greece",capital:"Athens",region:"Europe"},{country:"Switzerland",capital:"Bern",region:"Europe"},
+  {country:"Japan",capital:"Tokyo",region:"Asia"},{country:"China",capital:"Beijing",region:"Asia"},{country:"India",capital:"New Delhi",region:"Asia"},
+  {country:"South Korea",capital:"Seoul",region:"Asia"},{country:"Thailand",capital:"Bangkok",region:"Asia"},{country:"Vietnam",capital:"Hanoi",region:"Asia"},
+  {country:"Indonesia",capital:"Jakarta",region:"Asia"},{country:"Pakistan",capital:"Islamabad",region:"Asia"},{country:"Bangladesh",capital:"Dhaka",region:"Asia"},
+  {country:"Philippines",capital:"Manila",region:"Asia"},{country:"Myanmar",capital:"Naypyidaw",region:"Asia"},{country:"Malaysia",capital:"Kuala Lumpur",region:"Asia"},
+  {country:"United States",capital:"Washington D.C.",region:"Americas"},{country:"Canada",capital:"Ottawa",region:"Americas"},{country:"Mexico",capital:"Mexico City",region:"Americas"},
+  {country:"Brazil",capital:"Brasília",region:"Americas"},{country:"Argentina",capital:"Buenos Aires",region:"Americas"},{country:"Colombia",capital:"Bogotá",region:"Americas"},
+  {country:"Chile",capital:"Santiago",region:"Americas"},{country:"Peru",capital:"Lima",region:"Americas"},{country:"Venezuela",capital:"Caracas",region:"Americas"},
+  {country:"Cuba",capital:"Havana",region:"Americas"},
+  {country:"Egypt",capital:"Cairo",region:"Africa"},{country:"Nigeria",capital:"Abuja",region:"Africa"},{country:"South Africa",capital:"Pretoria",region:"Africa"},
+  {country:"Kenya",capital:"Nairobi",region:"Africa"},{country:"Ethiopia",capital:"Addis Ababa",region:"Africa"},{country:"Ghana",capital:"Accra",region:"Africa"},
+  {country:"Morocco",capital:"Rabat",region:"Africa"},{country:"Tanzania",capital:"Dodoma",region:"Africa"},{country:"Algeria",capital:"Algiers",region:"Africa"},
+  {country:"Uganda",capital:"Kampala",region:"Africa"},
+  {country:"Australia",capital:"Canberra",region:"Oceania"},{country:"New Zealand",capital:"Wellington",region:"Oceania"},{country:"Papua New Guinea",capital:"Port Moresby",region:"Oceania"},
+  {country:"Fiji",capital:"Suva",region:"Oceania"},
+  {country:"Russia",capital:"Moscow",region:"Europe/Asia"},{country:"Turkey",capital:"Ankara",region:"Europe/Asia"},{country:"Saudi Arabia",capital:"Riyadh",region:"Middle East"},
+  {country:"Iran",capital:"Tehran",region:"Middle East"},{country:"Iraq",capital:"Baghdad",region:"Middle East"},{country:"Israel",capital:"Jerusalem",region:"Middle East"},
+  {country:"UAE",capital:"Abu Dhabi",region:"Middle East"},{country:"Jordan",capital:"Amman",region:"Middle East"},{country:"Ukraine",capital:"Kyiv",region:"Europe"},
+  {country:"Romania",capital:"Bucharest",region:"Europe"},{country:"Hungary",capital:"Budapest",region:"Europe"}
+];
+
+const REGION_COLORS={Europe:"text-blue-600",Asia:"text-orange-600",Americas:"text-green-600",Africa:"text-yellow-600",Oceania:"text-purple-600","Europe/Asia":"text-teal-600","Middle East":"text-rose-600"};
+
+let srData=JSON.parse(localStorage.getItem('capitalSR')||'{}');
+let sessionQueue=[],sessionIdx=0,flipped=false,sessionStats={studied:0,rated:0};
+
+function getSRData(id){return srData[id]||{interval:1,easeFactor:2.5,dueDate:Date.now()-1,repetitions:0};}
+function isDue(id){return getSRData(id).dueDate<=Date.now();}
+function mastered(id){return getSRData(id).interval>=21;}
+
+function buildQueue(){
+  const due=PAIRS.map((_,i)=>i).filter(i=>isDue(i));
+  due.sort((a,b)=>getSRData(a).dueDate-getSRData(b).dueDate);
+  return due;
+}
+
+function updateStats(){
+  const total=PAIRS.length,due=buildQueue().length,mast=PAIRS.map((_,i)=>i).filter(i=>mastered(i)).length;
+  document.getElementById('deckStatus').textContent=`Due: ${due} | Total: ${total}`;
+  document.getElementById('statDue').textContent=due;
+  document.getElementById('statMastered').textContent=mast;
+  document.getElementById('statStudied').textContent=Object.keys(srData).length;
+  const pct=Math.round(Object.keys(srData).length/total*100);
+  document.getElementById('progressBar').style.width=pct+'%';
+}
+
+function startSession(){
+  sessionQueue=buildQueue();
+  if(!sessionQueue.length){sessionQueue=[...Array(PAIRS.length).keys()].sort(()=>Math.random()-.5).slice(0,10);}
+  sessionIdx=0;sessionStats={studied:0,rated:0};flipped=false;
+  document.getElementById('summaryArea').classList.add('hidden');
+  document.getElementById('studyArea').classList.remove('hidden');
+  renderCard();updateStats();
+}
+
+function renderCard(){
+  if(sessionIdx>=sessionQueue.length){showSummary();return;}
+  const p=PAIRS[sessionQueue[sessionIdx]];
+  document.getElementById('cardCountry').textContent=p.country;
+  document.getElementById('cardCapital').textContent=p.capital;
+  document.getElementById('cardRegion').textContent=p.region;
+  document.getElementById('cardRegion').className='text-xs uppercase tracking-widest mb-2 '+(REGION_COLORS[p.region]||'text-teal-400');
+  const sr=getSRData(sessionQueue[sessionIdx]);
+  document.getElementById('cardExtra').textContent=sr.repetitions>0?`Interval: ${sr.interval}d | Ease: ${sr.easeFactor.toFixed(1)}`:'';
+  const inner=document.getElementById('cardInner');
+  inner.classList.remove('flipped');flipped=false;
+  document.getElementById('ratingArea').classList.add('hidden');
+  document.getElementById('revealHint').classList.remove('hidden');
+}
+
+function flipCard(){
+  if(flipped)return;
+  document.getElementById('cardInner').classList.add('flipped');
+  flipped=true;
+  sessionStats.studied++;
+  document.getElementById('statStudied').textContent=Object.keys(srData).length+sessionStats.studied;
+  document.getElementById('ratingArea').classList.remove('hidden');
+  document.getElementById('ratingArea').className='slide-in';
+  document.getElementById('revealHint').classList.add('hidden');
+}
+
+function rate(q){
+  const id=sessionQueue[sessionIdx];
+  const sr=getSRData(id);
+  let{interval,easeFactor,repetitions}=sr;
+  if(q<3){interval=1;repetitions=0;}
+  else{
+    if(repetitions===0)interval=1;
+    else if(repetitions===1)interval=6;
+    else interval=Math.round(interval*easeFactor);
+    repetitions++;
+  }
+  easeFactor=Math.max(1.3,easeFactor+(0.1-(5-q)*(0.08+(5-q)*0.02)));
+  const dueDate=Date.now()+interval*86400000;
+  srData[id]={interval,easeFactor,dueDate,repetitions};
+  localStorage.setItem('capitalSR',JSON.stringify(srData));
+  const days=interval===1?'tomorrow':`in ${interval} days`;
+  document.getElementById('nextReview').textContent=`Next review: ${days}`;
+  sessionStats.rated++;
+  setTimeout(()=>{sessionIdx++;renderCard();updateStats();},600);
+}
+
+function showSummary(){
+  document.getElementById('studyArea').classList.add('hidden');
+  document.getElementById('summaryArea').classList.remove('hidden');
+  document.getElementById('summaryText').textContent=`You reviewed ${sessionStats.rated} card${sessionStats.rated!==1?'s':''} this session.`;
+  updateStats();
+}
+
+function resetAll(){srData={};localStorage.removeItem('capitalSR');updateStats();startSession();}
+function toggleFilter(){startSession();}
+
+updateStats();startSession();
+</script>
+</body>
+</html>
